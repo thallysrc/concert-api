@@ -23,7 +23,6 @@ def get_app() -> FastAPI:
 
     return application
 
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
