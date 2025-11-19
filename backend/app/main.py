@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from app.api.routers import router
-from infrastructure.database.connection import Base, engine
+from app.infrastructure.database.connection import engine, Base
 
 Base.metadata.create_all(bind=engine)
 

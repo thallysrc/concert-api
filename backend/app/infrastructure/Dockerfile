@@ -14,35 +14,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
     poetry config virtualenvs.create false
 
 # Copy project metadata (from backend/)
-COPY pyproject.toml poetry.lock /code/
+COPY ./pyproject.toml ./poetry.lock* /code/
 
-RUN poetry install --only main --no-interaction --no-ansi
+RUN poetry install --no-root && \
+    poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-# ----------------------------
-# Development
-# ----------------------------
+
 FROM builder AS development
 
-WORKDIR /code
+CMD ["uvicorn", "app.main:get_app", "--host", "127.0.0.1", "--port", "80", "--reload"]
 
-COPY . /code
-
-CMD ["uvicorn", "app.main:get_app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--factory"]
-
-# ----------------------------
-# Production
-# ----------------------------
-FROM python:3.13-slim AS production
-
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONPATH=/code
-
-WORKDIR /code
-
-COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-COPY . /code
-
-CMD ["uvicorn", "app.main:get_app", "--host", "0.0.0.0", "--port", "8000", "--factory"]
