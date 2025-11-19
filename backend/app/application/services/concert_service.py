@@ -3,7 +3,7 @@ class ConcertService:
     def __init__(self, event_repository):
         self.event_repository = event_repository
 
-    def create_event(self, event_data):
+    async def create_concert(self, event_data):
         return self.event_repository.add_event(event_data)
 
     def get_event(self, event_id):

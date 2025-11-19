@@ -22,5 +22,5 @@ async def create_concert(
     data: Concert,
     service: ConcertServiceDp,
 ):
-    return await service.create(data)
+    return await service.create_concert(data)
 

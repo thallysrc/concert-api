@@ -1,10 +1,9 @@
-import uuid
 from typing import Optional
 
 from pydantic import BaseModel
 
 class Concert(BaseModel):
-    id: Optional[uuid.UUID] = None
+    id: Optional[int] = None
     name: str
     date: str
     image_url: str

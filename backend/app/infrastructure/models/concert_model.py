@@ -1,8 +1,6 @@
 import datetime
-import uuid
 
 from sqlalchemy import String, Text, Float, Integer, DateTime
-from sqlalchemy.dialects.postgresql.base import UUID
 from sqlalchemy.orm import mapped_column, Mapped
 
 from app.infrastructure.database.connection import Base
@@ -11,10 +9,10 @@ from app.infrastructure.database.connection import Base
 class Concert(Base):
     __tablename__ = "concerts"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[int] = mapped_column(
+        Integer,
         primary_key=True,
-        default=uuid.uuid4,
+        autoincrement=True
     )
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
