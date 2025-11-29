@@ -17,10 +17,31 @@ def get_concert_service(repo=Depends(get_concert_repository)):
 
 ConcertServiceDp = Annotated[ConcertService, Depends(get_concert_service)]
 
-@router.post("/", response_model=List[Concert])
+@router.post("", response_model=List[Concert])
 async def create_concert(
     data: Concert,
     service: ConcertServiceDp,
 ):
-    return await service.create_concert(data)
+    return await service.create(data)
 
+@router.get("/{concert_id}", response_model=List[Concert])
+async def get_concert(
+    data: Concert,
+    service: ConcertServiceDp,
+):
+    return await service.get_all(data)
+
+@router.put("/{concert_id}", response_model=List[Concert])
+async def update_concert(
+    concert_id: int,
+    data: Concert,
+    service: ConcertServiceDp,
+):
+    return await service.update(concert_id, data)
+
+@router.delete("/{concert_id}", response_model=List[Concert])
+async def delete_concert(
+    concert_id: int,
+    service: ConcertServiceDp,
+):
+    return await service.delete(concert_id)
