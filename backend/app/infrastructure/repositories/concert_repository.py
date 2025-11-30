@@ -12,13 +12,16 @@ class ConcertRepository:
         self.db_session.refresh(concert_data)
         return concert_data
 
-    def update(self, concert_id, concert_data):
+    def update(self, concert_id: int, data):
         concert = self.get_by_id(concert_id)
-        if concert:
-            for key, value in concert_data.items():
-                setattr(concert, key, value)
-            self.db_session.commit()
-            self.db_session.refresh(concert)
+        if not concert:
+            return None
+
+        for key, value in data.items():
+            setattr(concert, key, value)
+
+        self.db_session.commit()
+        self.db_session.refresh(concert)
         return concert
 
     def delete(self, concert_id):

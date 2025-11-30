@@ -15,7 +15,7 @@ class ConcertService:
         return self.concert_repository.get(filters)
 
     async def update(self, event_id, concert_data):
-        return self.concert_repository.update(event_id, concert_data)
+        return self.concert_repository.update(event_id, concert_data.model_dump(exclude_unset=True))
 
     async def delete(self, event_id):
         return self.concert_repository.delete(event_id)

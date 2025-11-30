@@ -4,7 +4,6 @@ CREATE TABLE concerts (
     date TIMESTAMPTZ NOT NULL,
     image_url TEXT NOT NULL,
     location TEXT NOT NULL,
-    description TEXT,
     price DOUBLE PRECISION,
     participants INTEGER
 );

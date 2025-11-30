@@ -23,11 +23,5 @@ class ConcertIn(BaseModel):
     price: float | None = None
     participants: int | None = None
 
-    @field_validator("date", mode="before")
-    def parse_date(cls, v):
-        if isinstance(v, str):
-            return datetime.strptime(v, "%d/%m/%Y")
-        return v
-
     class Config:
         from_attributes = True

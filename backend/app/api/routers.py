@@ -32,15 +32,15 @@ async def get_concert(
 ):
     return await service.get(id=concert_id)
 
-@router.put("/{concert_id}", response_model=List[Concert])
+@router.put("/{concert_id}", response_model=Concert)
 async def update_concert(
     concert_id: int,
-    data: Concert,
+    data: ConcertIn,
     service: ConcertServiceDp,
 ):
     return await service.update(concert_id, data)
 
-@router.delete("/{concert_id}", response_model=List[Concert])
+@router.delete("/{concert_id}")
 async def delete_concert(
     concert_id: int,
     service: ConcertServiceDp,

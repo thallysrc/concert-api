@@ -10,7 +10,6 @@ type EventItem = {
   id: number;
   titulo: string;
   data: string;
-  hora: string;
   local: string;
   imagem: string;
   participantes: number | string;
@@ -29,30 +28,27 @@ export default function App(): JSX.Element {
   const [formAberto, setFormAberto] = useState(false);
   const [formData, setFormData] = useState<Partial<EventItem>>({});
 
+  async function fetchEventos() {
+    const res = await fetch("http://127.0.0.1:8000/concerts");
+    const data = await res.json();
+
+    const convertidos: EventItem[] = data.map((c: any) => ({
+      id: c.id,
+      titulo: c.name,
+      data: new Date(c.date).toLocaleDateString("pt-BR"),
+      local: c.location,
+      imagem: c.image_url,
+      participantes: c.participants ?? 0,
+      preco: c.price ? `R$ ${c.price}` : "Grátis",
+      valorPreco: c.price ?? 0,
+      valorData: new Date(c.date),
+    }));
+
+    setEventos(convertidos);
+  }
+
   useEffect(() => {
-    async function fetchEventos() {
-      const res = await fetch("http://127.0.0.1:8000/concerts");
-      const data = await res.json();
-
-      const convertidos: EventItem[] = data.map((c: any) => ({
-        id: c.id,
-        titulo: c.name,
-        data: new Date(c.date).toLocaleDateString("pt-BR"),
-        hora: "",
-        local: c.location,
-        imagem: c.image_url,
-        participantes: c.participants ?? 0,
-        preco: c.price ? `R$ ${c.price}` : "Grátis",
-        valorPreco: c.price ?? 0,
-        valorData: new Date(c.date),
-      }));
-
-      setEventos(convertidos);
-    }
-
     fetchEventos();
-
-    
   }, []);
 
   // 🔥 FIX: ensure icons always update
@@ -94,27 +90,58 @@ export default function App(): JSX.Element {
     setFormData({});
   }
 
-  function salvarEvento(ev: React.FormEvent) {
+  async function salvarEvento(ev: React.FormEvent) {
     ev.preventDefault();
-    const novo: EventItem = {
-      id: formData.id ? (formData.id as number) : Date.now(),
-      titulo: (formData.titulo as string) || "Novo Evento",
-      data: (formData.data as string) || "",
-      hora: (formData.hora as string) || "",
-      local: (formData.local as string) || "",
-      imagem: (formData.imagem as string) || "https://placehold.co/600x400",
-      participantes: Number(formData.participantes) || 0,
-      preco: (formData.preco as string) || "Grátis",
-      valorPreco: Number(formData.preco) || 0,
-      valorData: new Date((formData.data as string) || undefined),
+
+    const payload = {
+      id: formData.id ?? 0,
+      name: formData.titulo,
+      date: new Date(formData.data as string).toISOString(),
+      image_url: formData.imagem,
+      location: formData.local,
+      price: Number(formData.preco) || 0,
+      participants: Number(formData.participantes) || 0,
     };
 
-    setEventos((prev) => {
-      const idx = prev.findIndex((p) => p.id === novo.id);
-      if (idx >= 0) {
-        const c = [...prev];
-        c[idx] = { ...c[idx], ...novo };
-        return c;
+    const isEdit = Boolean(formData.id);
+
+    const url = isEdit
+      ? `http://127.0.0.1:8000/concerts/${formData.id}`
+      : "http://127.0.0.1:8000/concerts";
+
+    const method = isEdit ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      alert("Erro ao salvar evento!");
+      return;
+    }
+
+    const salvo = await res.json();
+
+    const novo: EventItem = {
+      id: salvo.id,
+      titulo: salvo.name,
+      data: new Date(salvo.date).toLocaleDateString("pt-BR"),
+      local: salvo.location,
+      imagem: salvo.image_url,
+      participantes: salvo.participants,
+      preco: salvo.price ? `R$ ${salvo.price}` : "Grátis",
+      valorPreco: salvo.price,
+      valorData: new Date(salvo.date),
+    };
+
+    // update state if edit, add if new
+    setEventos(prev => {
+      if (isEdit) {
+        return prev.map(e => (e.id === novo.id ? novo : e));
       }
       return [...prev, novo];
     });
@@ -122,9 +149,16 @@ export default function App(): JSX.Element {
     fecharModalFormulario();
   }
 
-  function excluirEvento(id: number) {
-    if (!confirm("Confirma exclusão?")) return;
-    setEventos((prev) => prev.filter((p) => p.id !== id));
+  async function excluirEvento(id: number) {
+    const resp = await fetch(`http://127.0.0.1:8000/concerts/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!resp.ok) {
+      throw new Error("Erro ao deletar evento");
+    }
+
+    await fetchEventos();
   }
 
   return (
@@ -258,31 +292,18 @@ export default function App(): JSX.Element {
                   onChange={(e) => setFormData(s => ({ ...s, titulo: e.target.value }))}
                 />
               </div>
-
-              <div className="grade-campos">
-                <div className="grupo-form">
-                  <label className="label-form">Data</label>
-                  <input
-                    type="text"
-                    required
-                    className="input-form"
-                    value={formData.data || ""}
-                    onChange={(e) => setFormData(s => ({ ...s, data: e.target.value }))}
-                  />
-                </div>
-
-                <div className="grupo-form">
-                  <label className="label-form">Horário</label>
-                  <input
-                    type="text"
-                    required
-                    className="input-form"
-                    value={formData.hora || ""}
-                    onChange={(e) => setFormData(s => ({ ...s, hora: e.target.value }))}
-                  />
-                </div>
+            
+              <div className="grupo-form">
+                <label className="label-form">Data</label>
+                <input
+                  type="date"
+                  required
+                  className="input-form"
+                  value={formData.data}
+                  onChange={(e) => setFormData(s => ({ ...s, data: e.target.value }))}
+                />
               </div>
-
+           
               <div className="grupo-form">
                 <label className="label-form">Local</label>
                 <input
@@ -292,22 +313,6 @@ export default function App(): JSX.Element {
                   value={formData.local || ""}
                   onChange={(e) => setFormData(s => ({ ...s, local: e.target.value }))}
                 />
-              </div>
-
-              <div className="grupo-form">
-                <label className="label-form">Categoria</label>
-                <select
-                  className="input-form"
-                  value={formData.categoria || ""}
-                  onChange={(e) => setFormData(s => ({ ...s, categoria: e.target.value }))}
-                >
-                  <option>Música</option>
-                  <option>Gastronomia</option>
-                  <option>Arte</option>
-                  <option>Esportes</option>
-                  <option>Teatro</option>
-                  <option>Festas</option>
-                </select>
               </div>
 
               <div className="grupo-form">
@@ -327,7 +332,7 @@ export default function App(): JSX.Element {
                   <input
                     type="number"
                     className="input-form"
-                    value={formData.participantes || ""}
+                    value={formData.participantes}
                     onChange={(e) => setFormData(s => ({ ...s, participantes: e.target.value }))}
                   />
                 </div>
