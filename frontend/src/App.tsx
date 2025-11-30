@@ -51,16 +51,8 @@ export default function App(): JSX.Element {
     fetchEventos();
   }, []);
 
-  // 🔥 FIX: ensure icons always update
   useEffect(() => {
-    try {
-      // remove duplicated SVG nodes
-      document
-        .querySelectorAll("svg[data-lucide]")
-        .forEach((el) => el.remove());
-
-      lucide?.createIcons();
-    } catch {}
+    lucide?.createIcons();
   }, [eventos, detalheAberto, formAberto]);
 
   const eventosFiltrados = useMemo(
@@ -138,7 +130,6 @@ export default function App(): JSX.Element {
       valorData: new Date(salvo.date),
     };
 
-    // update state if edit, add if new
     setEventos(prev => {
       if (isEdit) {
         return prev.map(e => (e.id === novo.id ? novo : e));
@@ -167,7 +158,6 @@ export default function App(): JSX.Element {
 
       <main className="container area-principal">
         <div className="caixa-busca">
-          <i data-lucide="search" className="icone-busca"></i>
           <input
             className="input-busca input-form"
             placeholder="Buscar eventos por nome..."
