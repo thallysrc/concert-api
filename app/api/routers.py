@@ -2,10 +2,11 @@ from typing import List, Annotated, Optional
 
 from fastapi import APIRouter, Depends
 
-from app.api.schemas import Concert, ConcertIn
+from app.api.schemas import Concert, ConcertIn, MessageIn
 from app.infrastructure.database.connection import get_db
 from app.infrastructure.repositories.concert_repository import ConcertRepository
 from app.application.services.concert_service import ConcertService
+from app.infrastructure.workers.worker import process_campaign
 
 router = APIRouter(prefix="/concerts", tags=["Concerts"])
 
@@ -46,3 +47,11 @@ async def delete_concert(
     service: ConcertServiceDp,
 ):
     return await service.delete(concert_id)
+
+
+@router.post("/send_mail/")
+async def dispatch_campaign(
+    data: MessageIn,
+):
+    process_campaign.delay(data.body)
+    return {"message": "Campaign dispatched"}

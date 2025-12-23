@@ -25,3 +25,7 @@ class ConcertIn(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MessageIn(BaseModel):
+    body: str

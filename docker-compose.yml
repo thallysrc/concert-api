@@ -11,6 +11,79 @@ services:
     volumes:
       - ./:/code
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  dispatcher_worker:
+    build:
+      context: .
+      dockerfile: app/infrastructure/workers/celery.Dockerfile
+    container_name: dispatcher_worker
+    working_dir: /app
+    command: celery -A app.infrastructure.workers.worker:celery_app worker -l info
+    depends_on:
+      - redis
+    environment:
+      - PYTHONPATH=/app
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+
+  email_worker:
+    build:
+      context: .
+      dockerfile: app/infrastructure/workers/celery.Dockerfile
+    container_name: email_worker
+    working_dir: /app
+    command: celery -A app.infrastructure.workers.worker:celery_app worker -l info
+    depends_on:
+      - redis
+    environment:
+      - PYTHONPATH=/app
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+
+  whatsapp_worker:
+    build:
+      context: .
+      dockerfile: app/infrastructure/workers/celery.Dockerfile
+    container_name: whatsapp_worker
+    working_dir: /app
+    command: celery -A app.infrastructure.workers.worker:celery_app worker -l info
+    depends_on:
+      - redis
+    environment:
+      - PYTHONPATH=/app
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+
+  slack_worker:
+    build:
+      context: .
+      dockerfile: app/infrastructure/workers/celery.Dockerfile
+    container_name: slack_worker
+    working_dir: /app
+    command: celery -A app.infrastructure.workers.worker:celery_app worker -l info
+    depends_on:
+      - redis
+    environment:
+      - PYTHONPATH=/app
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+
   postgres:
     image: postgres:15
     container_name: postgres_db
@@ -24,5 +97,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  flower:
+    build:
+      context: .
+      dockerfile: app/infrastructure/workers/celery.Dockerfile
+    container_name: flower
+    command: celery -A app.infrastructure.workers.worker:celery_app flower --port=5555
+    depends_on:
+      - redis
+      - celery
+    environment:
+      - PYTHONPATH=/app
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    volumes:
+      - .:/app
+
 volumes:
   postgres_data:
+  redis_data:
