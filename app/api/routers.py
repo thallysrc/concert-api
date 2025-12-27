@@ -6,7 +6,7 @@ from app.api.schemas import Concert, ConcertIn, MessageIn
 from app.infrastructure.database.connection import get_db
 from app.infrastructure.repositories.concert_repository import ConcertRepository
 from app.application.services.concert_service import ConcertService
-from app.infrastructure.workers.worker import process_campaign
+from app.infrastructure.workers.dispatcher import process_campaign
 
 router = APIRouter(prefix="/concerts", tags=["Concerts"])
 
@@ -53,5 +53,5 @@ async def delete_concert(
 async def dispatch_campaign(
     data: MessageIn,
 ):
-    process_campaign.delay(data.body)
+    process_campaign.delay("12345")
     return {"message": "Campaign dispatched"}

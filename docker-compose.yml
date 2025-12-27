@@ -6,6 +6,9 @@ services:
       dockerfile: app/infrastructure/Dockerfile
     container_name: backend
     command: sh -c "uvicorn app.main:get_app --factory --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      - redis
+      - postgres
     ports:
       - "8000:8000"
     volumes:
@@ -19,6 +22,11 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   dispatcher_worker:
     build:
@@ -26,9 +34,10 @@ services:
       dockerfile: app/infrastructure/workers/celery.Dockerfile
     container_name: dispatcher_worker
     working_dir: /app
-    command: celery -A app.infrastructure.workers.worker:celery_app worker -l info
+    command: celery -A app.infrastructure.messaging.celery_app:celery_app worker -l debug
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - PYTHONPATH=/app
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -42,9 +51,10 @@ services:
       dockerfile: app/infrastructure/workers/celery.Dockerfile
     container_name: email_worker
     working_dir: /app
-    command: celery -A app.infrastructure.workers.worker:celery_app worker -l info
+    command: celery -A app.infrastructure.messaging.celery_app:celery_app worker -l info -n email_worker@%h
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - PYTHONPATH=/app
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -58,9 +68,10 @@ services:
       dockerfile: app/infrastructure/workers/celery.Dockerfile
     container_name: whatsapp_worker
     working_dir: /app
-    command: celery -A app.infrastructure.workers.worker:celery_app worker -l info
+    command: celery -A app.infrastructure.messaging.celery_app:celery_app worker -l debug -n whatsapp_worker@%h
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - PYTHONPATH=/app
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -74,9 +85,10 @@ services:
       dockerfile: app/infrastructure/workers/celery.Dockerfile
     container_name: slack_worker
     working_dir: /app
-    command: celery -A app.infrastructure.workers.worker:celery_app worker -l info
+    command: celery -A app.infrastructure.messaging.celery_app:celery_app worker -l debug -n slack_worker@%h
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - PYTHONPATH=/app
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -102,10 +114,9 @@ services:
       context: .
       dockerfile: app/infrastructure/workers/celery.Dockerfile
     container_name: flower
-    command: celery -A app.infrastructure.workers.worker:celery_app flower --port=5555
+    command: celery -A app.infrastructure.messaging.celery_app:celery_app flower --port=5555
     depends_on:
       - redis
-      - celery
     environment:
       - PYTHONPATH=/app
       - CELERY_BROKER_URL=redis://redis:6379/0
